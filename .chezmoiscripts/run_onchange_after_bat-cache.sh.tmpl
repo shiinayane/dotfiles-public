@@ -1,0 +1,19 @@
+#!/bin/bash
+# 重建 bat 主题缓存 —— 让 ~/.config/bat/themes/ 里的 Serendipity 主题被 bat 识别。
+# 跨平台:macOS 的 bat 由 brew 装(在 PATH);Linux 的 bat 由 mise 装(shims 目录,
+# bootstrap 时可能还没进 PATH,故下面显式加 mise shims 再探测)。
+# run_onchange:下面的 hash 注释会随主题文件内容变化,从而触发本脚本重跑。
+# after:在 chezmoi 写完 themes/ 之后运行。
+#
+# themes hash:
+#   midnight {{ include "dot_config/bat/themes/serendipity-midnight.tmTheme" | sha256sum }}
+#   morning  {{ include "dot_config/bat/themes/serendipity-morning.tmTheme" | sha256sum }}
+#   sunset   {{ include "dot_config/bat/themes/serendipity-sunset.tmTheme" | sha256sum }}
+set -eu
+export PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$PATH"
+if command -v bat >/dev/null 2>&1; then
+  echo "==> bat cache --build(重建主题/语法缓存)..."
+  bat cache --build
+else
+  echo "==> (bat 暂不可用,跳过 cache build;装好 bat 后重跑 chezmoi apply)"
+fi

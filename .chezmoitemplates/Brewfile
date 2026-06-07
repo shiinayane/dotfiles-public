@@ -1,0 +1,77 @@
+# Brewfile — 由 chezmoi 管理,新机器 `chezmoi apply` 时自动安装。
+# 编辑本文件后再 apply 会自动重新 `brew bundle`(靠 run_onchange 脚本)。
+# 注:不带 --cleanup,只增不删,手动卸载的包不会被这里重新装回。
+
+# === CLI 工具 ===
+brew "ast-grep"      # 结构化代码搜索/改写
+brew "bat"           # cat 替代(高亮)
+brew "btop"          # 资源监视器
+brew "chezmoi"       # dotfiles 管理(自举)
+brew "fastfetch"     # 系统信息
+brew "fzf"           # 模糊查找
+brew "mas"           # Mac App Store CLI(供下方 mas 条目使用)
+brew "mise"          # 运行时版本管理(python/node/...)
+brew "neovim"        # 编辑器
+brew "tlrc"          # tldr 客户端
+brew "uv"            # python 包/项目管理
+brew "wget"
+brew "zoxide"        # 智能 cd
+
+# === 现代 CLI 替代 ===
+brew "ripgrep"       # grep 替代(rg);nvim/fzf 搜索后端
+brew "fd"            # find 替代;fzf/nvim find-files 后端(尊重 .gitignore)
+brew "eza"           # ls 替代(图标 / git 状态)
+
+# === Git ===
+brew "gh"            # GitHub CLI
+brew "lazygit"       # git TUI(LazyVim <leader>gg 直接调用)
+
+# === Zsh 提示符与插件 ===
+brew "powerlevel10k"     # 提示符(zsh-bench 实测最快,instant prompt)
+brew "zsh-autosuggestions"
+brew "zsh-completions"
+brew "zsh-syntax-highlighting"
+
+# === 字体 ===
+cask "font-maple-mono-nf-cn"
+
+# === GUI 应用 ===
+cask "ghostty"               # 终端
+cask "visual-studio-code"
+cask "claude"
+cask "orbstack"              # Docker/Linux VM
+cask "google-chrome"
+cask "iina"                  # 播放器
+cask "betterdisplay"
+cask "loop"                  # 窗口管理
+cask "appcleaner"
+cask "tailscale-app"
+cask "slack"
+cask "wechat"
+cask "microsoft-excel"
+
+# === 排版 / 文档 ===
+# mactex-no-gui:完整 TeX Live,不含 GUI 工具(命令入口 /Library/TeX/texbin,已加进 PATH)。
+cask "mactex-no-gui"
+
+# === Mac App Store ===
+# 需先登录 App Store;装的是与你 Apple ID 关联的应用。
+# 不想在新机器自动装的(如 Xcode 体积大),注释掉对应行即可。
+mas "Keynote",                    id: 361285480
+mas "Numbers",                    id: 361304891
+mas "Pages",                      id: 361309726
+mas "Xcode",                      id: 497799835
+mas "Final Cut Pro",              id: 1631624924
+mas "Pixelmator Pro",             id: 6746662575
+mas "RunCat",                     id: 1429033973
+mas "Blackmagic Disk Speed Test", id: 425264550
+mas "Symbols Finder",             id: 6651821897
+mas "uBlock Origin Lite",         id: 6745342698
+mas "Userscripts",                id: 1463298887
+mas "没入型翻訳",                  id: 6447957425
+
+# === 游戏(默认注释:不在新机器自动装;本机已装则保留)===
+# 约定:游戏一律放这里并保持注释。想在某台机器装就临时取消注释。
+# brewfile-drift 会忽略已注释项,不会把它们报成漂移。
+# mas "Balatro",                  id: 6502451661
+# mas "HYKE Northern Light(s)",   id: 6479881755

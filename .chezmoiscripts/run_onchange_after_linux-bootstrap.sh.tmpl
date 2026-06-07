@@ -1,0 +1,114 @@
+{{ if ne .chezmoi.os "darwin" -}}
+#!/bin/bash
+# Linux 远程机 bootstrap(无 sudo):chezmoi apply 时自动跑。
+# 装 zsh-bin + mise + zsh 插件 → mise install CLI 工具 → 配 .bashrc 守卫式 exec zsh。
+# 全部装进 ~/.local,零 sudo。幂等:已装的跳过。
+# run_onchange:本脚本内容变化时重跑(改插件列表/版本会触发)。
+#
+# 插件版本锚(改这里可强制重跑):
+#   zsh-plugins: powerlevel10k zsh-autosuggestions zsh-syntax-highlighting zsh-completions
+set -eu
+
+LOCAL_BIN="$HOME/.local/bin"
+PLUGIN_DIR="$HOME/.local/share/zsh/plugins"
+mkdir -p "$LOCAL_BIN" "$PLUGIN_DIR"
+
+echo "==> [1/5] zsh-bin(静态 zsh,无 sudo)"
+if [ -x "$HOME/.local/bin/zsh" ]; then
+  echo "    已装,跳过"
+else
+  curl -fsSL https://raw.githubusercontent.com/romkatv/zsh-bin/master/install -o /tmp/zsh-bin-install.sh
+  sh /tmp/zsh-bin-install.sh -d "$HOME/.local" -e no
+  rm -f /tmp/zsh-bin-install.sh
+fi
+
+echo "==> [2/5] mise(运行时 + CLI 工具管理器)"
+if command -v mise >/dev/null 2>&1 || [ -x "$LOCAL_BIN/mise" ]; then
+  echo "    已装,跳过"
+else
+  curl -fsSL https://mise.run | MISE_INSTALL_PATH="$LOCAL_BIN/mise" sh
+fi
+
+echo "==> [3/5] zsh 插件(git clone)"
+clone_plugin() {
+  # $1=repo  $2=目录名
+  if [ -d "$PLUGIN_DIR/$2" ]; then
+    echo "    已存在: $2"
+  else
+    git clone -q --depth=1 "$1" "$PLUGIN_DIR/$2" && echo "    ✓ $2"
+  fi
+}
+clone_plugin https://github.com/romkatv/powerlevel10k.git            powerlevel10k
+clone_plugin https://github.com/zsh-users/zsh-autosuggestions.git    zsh-autosuggestions
+clone_plugin https://github.com/zsh-users/zsh-syntax-highlighting.git zsh-syntax-highlighting
+clone_plugin https://github.com/zsh-users/zsh-completions.git        zsh-completions
+
+echo "==> [4/5] mise install(装 config.toml 声明的 CLI 工具)"
+if [ -x "$LOCAL_BIN/mise" ]; then
+  "$LOCAL_BIN/mise" install 2>&1 | tail -3 || echo "    (部分工具可能失败,见上;不阻断)"
+  # bat 主题缓存:bat 刚由 mise 装好,在此 build 让 serendipity 主题被识别。
+  # (独立的 bat-cache run_onchange 按字母序先于本脚本跑、那时 bat 还没装,故在此补)
+  if [ -x "$HOME/.local/share/mise/shims/bat" ]; then
+    echo "    重建 bat 主题缓存..."
+    "$HOME/.local/share/mise/shims/bat" cache --build >/dev/null 2>&1 && echo "    ✓ bat themes 已注册" || echo "    (bat cache 失败,不阻断)"
+  fi
+fi
+
+echo "==> [5/5] .bashrc 守卫式 exec zsh(无 sudo 进 zsh)"
+MARKER="# >>> chezmoi: exec zsh-bin if available >>>"
+if grep -qF "$MARKER" "$HOME/.bashrc" 2>/dev/null; then
+  echo "    守卫块已存在,跳过"
+else
+  cat >> "$HOME/.bashrc" <<'BASHRC_BLOCK'
+
+# >>> chezmoi: exec zsh-bin if available >>>
+# 交互式 bash 启动时,若本地 zsh 存在则切过去(无 sudo 改登录 shell 的替代)。
+# 守卫:仅交互(不碰 scp/rsync/ssh-cmd)、仅 zsh 存在、防递归。zsh 缺失则留在 bash。
+if [ -z "${ZSH_VERSION:-}" ] && [ -x "$HOME/.local/bin/zsh" ]; then
+  case $- in
+    *i*)
+      export ZDOTDIR="$HOME/.config/zsh"
+      export PATH="$HOME/.local/bin:$PATH"
+      exec "$HOME/.local/bin/zsh" -l
+      ;;
+  esac
+fi
+# <<< chezmoi: exec zsh-bin if available <<<
+BASHRC_BLOCK
+  echo "    ✓ 守卫块已追加"
+fi
+
+echo "==> [6/6] VSCode Remote 集成终端用 zsh"
+# 仅当远程装过 vscode-server 才配(否则没必要建目录)。
+# 键合并(非覆盖):只设 terminal profile 两个键,保留 GUI 加的其它设置。
+# 该文件在 vscode-server 运行时目录,不归 chezmoi 管;server 被卸载会连它一起删,
+# 下次 bootstrap 自愈重建。用 python3(系统自带,不依赖 jq)做合并。
+VSC_SETTINGS="$HOME/.vscode-server/data/Machine/settings.json"
+if [ -d "$HOME/.vscode-server" ]; then
+  mkdir -p "$(dirname "$VSC_SETTINGS")"
+  [ -f "$VSC_SETTINGS" ] || echo '{}' > "$VSC_SETTINGS"
+  ZSH_PATH="$HOME/.local/bin/zsh" ZDOTDIR_PATH="$HOME/.config/zsh" SETTINGS_FILE="$VSC_SETTINGS" python3 - <<'PYEOF'
+import json, os, re
+f = os.environ["SETTINGS_FILE"]
+raw = open(f).read().strip() or "{}"
+# 容忍 JSONC 行注释(GUI 可能写过带注释的)
+try:
+    d = json.loads(re.sub(r"^\s*//.*$", "", raw, flags=re.M))
+except Exception:
+    d = {}
+profs = d.setdefault("terminal.integrated.profiles.linux", {})
+profs["zsh (local)"] = {
+    "path": os.environ["ZSH_PATH"],
+    "args": ["-l"],
+    "env": {"ZDOTDIR": os.environ["ZDOTDIR_PATH"]},
+}
+d["terminal.integrated.defaultProfile.linux"] = "zsh (local)"
+json.dump(d, open(f, "w"), indent=2, ensure_ascii=False)
+print("    ✓ VSCode zsh profile 已合并(保留其它设置)")
+PYEOF
+else
+  echo "    (无 vscode-server,跳过;用 VSCode 连过一次后重跑 chezmoi apply 即可配)"
+fi
+
+echo "==> bootstrap 完成。新开 SSH 会话 / VSCode 终端即进入 p10k zsh。"
+{{ end -}}

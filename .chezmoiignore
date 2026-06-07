@@ -1,0 +1,39 @@
+# .chezmoiignore — chezmoi 不部署 / 不管理的目标
+#
+# 用 target 名(相对 $HOME 的真实路径,无 dot_/private_ 前缀)。
+# 命中后 apply / add / managed / diff 全部跳过 —— 防止反复 churn。
+# 这里是「什么不是 dotfile」的唯一事实来源;机密兜底见源仓库 .gitignore。
+# 本文件支持模板语法,可按机器 / OS 条件区分(注意:模板分隔符不能出现在注释里)。
+
+# --- Shell 历史(每台机器各自维护,不纳入管理)---
+.config/zsh/.zsh_history
+.zsh_history
+.zsh_sessions
+
+# --- 系统 / 编辑器垃圾 ---
+**/.DS_Store
+
+# --- 编译 / 缓存产物 ---
+*.zwc
+.config/zsh/.zcompdump*
+
+# --- 密钥:私钥以 age 加密形式纳入(源为 encrypted_*.age,目标 ~/.ssh/id_*,0600);
+#     公钥(.pub)明文纳入(非敏感);known_hosts 不纳入(各机自生成)---
+.ssh/known_hosts
+
+# --- 本机私有覆盖(.zshrc 会 source 它,但永远只存在于本机)---
+.config/zsh/90-local.zsh
+
+# --- 仓库元文档(前导 / 锚定 home 根,避免误伤 nvim 等子目录里被管理的 README)---
+/CLAUDE.md
+/README.md
+
+# --- 非 macOS(Linux 远程机)跳过 macOS / 本地专属配置 ---
+# 远程 GPU 机靠 chezmoi 部署通用配置(zsh/p10k/git/nvim/bat/lazygit),
+# 但下列只属于本地 mac:终端模拟器、系统信息 logo。
+# 注:.ssh/config 改为部署(github host 全平台需要),内网拓扑由模板内 OS 条件控制
+#     (仅 mac/windows 输出敏感 host,Linux 只得到 github)——见 private_dot_ssh/private_config.tmpl。
+{{- if ne .chezmoi.os "darwin" }}
+.config/ghostty
+.config/fastfetch
+{{- end }}

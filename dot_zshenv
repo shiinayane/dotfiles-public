@@ -1,0 +1,3 @@
+# .zshenv — 所有 zsh 都会读取(最早执行)
+# 让 zsh 把 ~/.config/zsh 当作配置目录
+export ZDOTDIR="$HOME/.config/zsh"

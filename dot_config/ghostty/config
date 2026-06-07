@@ -1,0 +1,19 @@
+# font-family = SF Mono
+font-family = Maple Mono NF CN
+font-size = 18
+quick-terminal-position = right
+quick-terminal-size = 50%
+theme = dark:serendipity-midnight,light:serendipity-morning
+background-opacity = 0.8
+background-blur = 5
+window-height = 25
+window-width = 100
+keybind = global:option+1=toggle_quick_terminal
+# ssh-terminfo 去掉:它往远程装 xterm-ghostty,但远程用 zsh-bin(hermetic,
+# 读不到该条目),纯无效;远程 TERM 已在 zsh 配置兜底为 xterm-256color。
+shell-integration-features = no-cursor,ssh-env,path
+cursor-style = block
+cursor-style-blink = false
+cursor-click-to-move = true
+copy-on-select = clipboard
+custom-shader = "~/.config/ghostty/shaders/cursor_warp.glsl"

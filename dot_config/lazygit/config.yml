@@ -1,0 +1,30 @@
+# lazygit 配置 —— 由 chezmoi 管理
+# Serendipity Sunset 主题(来自 Serendipity-Theme/lazygit)。
+# 上游是片段:顶层直接是 theme:,必须嵌到 gui.theme 下才生效。
+# 切换变体:换成该仓库 midnight / morning 的配色值。
+gui:
+  theme:
+    activeBorderColor:
+      - "#d6b4b4"
+      - bold
+    inactiveBorderColor:
+      - "#a0b6e8"
+    searchingActiveBorderColor:
+      - "#d1918f"
+      - bold
+    optionsTextColor:
+      - "#6b6d7c"
+    selectedLineBgColor:
+      - "#6B6D7C26"
+    cherryPickedCommitFgColor:
+      - "#6b6d7c"
+    cherryPickedCommitBgColor:
+      - "#d1918f"
+    markedBaseCommitFgColor:
+      - "#d1918f"
+    markedBaseCommitBgColor:
+      - "#a0b6e8"
+    unstagedChangesColor:
+      - "#6b6d7c"
+    defaultFgColor:
+      - "#dee0ef"

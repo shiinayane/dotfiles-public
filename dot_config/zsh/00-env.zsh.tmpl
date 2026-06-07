@@ -1,0 +1,57 @@
+# 00-env.zsh — 环境变量 / XDG / PATH
+{{- if ne .chezmoi.os "darwin" }}
+
+# --- TERM 兜底(仅 Linux 远程机,须最早生效)---
+# 远程用 zsh-bin(hermetic terminfo,只认编译进去的标准条目)。ghostty 经 SSH
+# 传来的 TERM=xterm-ghostty 它读不到(报 can't find terminal definition),
+# 导致 zle 光标/删除/重绘错乱。降级到 zsh-bin 内置支持的 xterm-256color,
+# 实测光标/删除/256 色全正常。仅当当前 TERM 不被识别时覆盖。
+if [[ "$TERM" == xterm-ghostty || -z "$TERM" ]]; then
+  export TERM=xterm-256color
+fi
+{{- end }}
+
+# --- 补全路径(跨平台,须在 compinit(10)之前生效)---
+# zsh-completions:macOS 由 brew 装在 /opt/homebrew/share;Linux 由 git clone 到
+# ~/.local/share/zsh/plugins/zsh-completions(补全函数在其 src/ 子目录)。
+[[ -d /opt/homebrew/share/zsh-completions ]]                      && FPATH=/opt/homebrew/share/zsh-completions:$FPATH
+[[ -d "$HOME/.local/share/zsh/plugins/zsh-completions/src" ]]     && FPATH="$HOME/.local/share/zsh/plugins/zsh-completions/src:$FPATH"
+# brew 自带的 _brew 等(仅 macOS)
+[[ -d /opt/homebrew/share/zsh/site-functions ]]  && FPATH=/opt/homebrew/share/zsh/site-functions:$FPATH
+
+# --- XDG 基础目录(10/40 已隐式依赖,这里集中定义)---
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_STATE_HOME="$HOME/.local/state"
+
+# --- 编辑器 ---
+export EDITOR=nvim
+export VISUAL=nvim
+
+# --- Homebrew(关闭匿名分析)---
+export HOMEBREW_NO_ANALYTICS=1
+
+# --- PATH(case 去重,幂等避免重复 source 时叠加)---
+# pnpm 全局目录(将来用 pnpm add -g 时)
+export PNPM_HOME="$HOME/.local/share/pnpm"
+if [[ -d "$PNPM_HOME" ]]; then
+  case ":$PATH:" in
+    *":$PNPM_HOME:"*) ;;
+    *) export PATH="$PNPM_HOME:$PATH" ;;
+  esac
+fi
+
+# ~/.local/bin
+case ":$PATH:" in
+  *":$HOME/.local/bin:"*) ;;
+  *) export PATH="$HOME/.local/bin:$PATH" ;;
+esac
+
+# MacTeX(mactex-no-gui):TeX Live 命令入口,固定软链不随版本变
+if [[ -d /Library/TeX/texbin ]]; then
+  case ":$PATH:" in
+    *":/Library/TeX/texbin:"*) ;;
+    *) export PATH="/Library/TeX/texbin:$PATH" ;;
+  esac
+fi

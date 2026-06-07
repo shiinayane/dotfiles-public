@@ -1,0 +1,33 @@
+# github:全平台部署(git 操作需要)
+Host    github.com
+        HostName        github.com
+        User            git
+        IdentityFile    ~/.ssh/id_ed25519_github
+        IdentitiesOnly  yes
+{{ if ne .chezmoi.os "linux" -}}
+# ↓↓↓ 内网拓扑 / VPS:仅 macOS 与 Windows 部署,Linux 远程跳过。
+# (以下为占位示例,展示模板结构;实际主机名/IP/密钥按需替换。)
+{{ if eq .chezmoi.os "darwin" -}}
+# OrbStack(仅 macOS):须在所有 Host 块之前。
+Include ~/.orbstack/ssh/config
+{{ end }}
+Host    jump-host
+        HostName        jump.example.com
+        User            your-user
+        IdentityFile    ~/.ssh/id_ed25519_example
+        IdentitiesOnly  yes
+
+Host    your-gpu-box
+        HostName        gpu.internal.example
+        User            your-user
+        IdentityFile    ~/.ssh/id_ed25519_example
+        IdentitiesOnly  yes
+        ProxyJump       jump-host
+
+Host    your-vps
+        HostName        vps.example.com
+        User            root
+        Port            22
+        IdentityFile    ~/.ssh/id_rsa_example.pem
+        IdentitiesOnly  yes
+{{ end -}}

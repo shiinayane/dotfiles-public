@@ -1,0 +1,22 @@
+[tools]
+node = "22"
+python = "3.13"
+{{- if ne .chezmoi.os "darwin" }}
+
+# 非 macOS(无 sudo 的 Linux 远程机):brew 装不了,改由 mise 装这批 CLI 工具。
+# 全部走 aqua/vfox 后端 = 下载预编译二进制(含 aarch64),零编译、零 sudo。
+# macOS 上这些交给 Homebrew(见 Brewfile),不在此声明,避免 brew/mise 双重管理。
+# 实测 aarch64 Linux 全部装上可用。
+bat      = "latest"
+eza      = "latest"
+fzf      = "latest"
+zoxide   = "latest"
+ripgrep  = "latest"
+fd       = "latest"
+btop     = "latest"
+lazygit  = "latest"
+uv       = "latest"
+"aqua:ast-grep/ast-grep" = "latest"        # 锁 aqua,杜绝回落到 cargo 源码编译
+"ubi:tldr-pages/tlrc[exe=tldr]" = "latest" # aqua 元数据缺 arm64;走 ubi 直抓 release,exe 名是 tldr 非 tlrc
+neovim   = "0.12"                          # vfox arm64 tarball;须 >=0.10.4,避开 0.11.5(arm 包损坏)
+{{- end }}

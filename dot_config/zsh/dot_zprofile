@@ -1,0 +1,8 @@
+# .zprofile — 登录 shell 一次性初始化
+
+# --- Homebrew 环境(PATH / MANPATH / 等)---
+# 仅在 brew 存在时(macOS)执行;Linux 远程机无 brew,跳过避免报错
+[[ -x /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv zsh)"
+
+# --- OrbStack 命令行集成(仅 macOS 本机有)---
+source ~/.orbstack/shell/init.zsh 2>/dev/null || :

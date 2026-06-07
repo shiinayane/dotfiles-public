@@ -1,0 +1,12 @@
+# bat 配置 —— 由 chezmoi 管理
+# 主题文件在 ~/.config/bat/themes/(Serendipity)。改动主题后,
+# run_onchange 脚本会自动 `bat cache --build` 重建缓存。
+
+# 跟随系统浅/深色自动切换(bat 按文件名识别主题)。
+# 深色 = sunset、浅色 = morning,与 ghostty 一致。
+--theme="auto"
+--theme-light="serendipity-morning"
+--theme-dark="serendipity-sunset"
+
+# 想固定单一主题,改回下面一行(并注释掉上面三行):
+# --theme="serendipity-sunset"

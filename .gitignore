@@ -1,0 +1,34 @@
+# .gitignore — git 不提交的源文件
+#
+# 用 source 名(带 dot_/private_ 前缀,即源目录里的真实文件名)。
+# 职责窄:① 机密兜底 —— 源目录是明文存储,万一误 chezmoi add 了密钥/凭证,
+#          这里拦住它不进 GitHub;② Finder 等直接在源目录生成的垃圾。
+# 「垃圾 / 缓存 / 历史」的部署策略归 .chezmoiignore 管,这里不重复造表。
+
+# --- macOS / 编辑器垃圾(可能由 Finder 直接生成在源目录,不经 chezmoi)---
+**/dot_DS_Store
+.DS_Store
+*.swp
+
+# --- 工具在源仓库根写的本地运行时状态(非 dotfile,不入库)---
+/.claude/
+
+# --- 机密兜底(明文源目录的最后一道防线)---
+# 拦明文密钥;但放行 age 加密文件(encrypted_*.age 是密文,就是要入库的)。
+**/private_dot_ssh/private_id_*
+**/private_dot_ssh/*private_key*
+**/private_dot_gnupg/
+**/dot_aws/
+**/dot_netrc
+**/dot_env
+**/dot_env.local
+*.pem
+*.key
+!**/encrypted_*.age
+
+# --- 应用自动备份(karabiner 会写时间戳 json,体积大且无意义)---
+dot_config/private_karabiner/private_automatic_backups/
+
+# --- Shell 历史(已被 .chezmoiignore 挡在源目录外,此处再兜底)---
+**/private_dot_zsh_history
+**/dot_*_history

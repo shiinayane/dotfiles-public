@@ -1,0 +1,20 @@
+# .zshrc — 交互式 shell 入口(按编号加载各模块)
+
+# --- instant prompt(p10k 专用,必须在最顶部)---
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# --- helper ---
+_zsource() { [[ -r "$1" ]] && source "$1"; }
+
+# --- 加载模块(顺序敏感)---
+_zsource "$ZDOTDIR/00-env.zsh"
+_zsource "$ZDOTDIR/10-completion.zsh"
+_zsource "$ZDOTDIR/20-aliases.zsh"
+_zsource "$ZDOTDIR/30-functions.zsh"
+_zsource "$ZDOTDIR/35-tools.zsh"
+_zsource "$ZDOTDIR/36-brewfile.zsh"
+_zsource "$ZDOTDIR/40-lang.zsh"
+_zsource "$ZDOTDIR/50-plugins.zsh"
+_zsource "$ZDOTDIR/90-local.zsh"

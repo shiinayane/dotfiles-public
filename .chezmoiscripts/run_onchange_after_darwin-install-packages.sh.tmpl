@@ -1,0 +1,28 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+# 新机器 bootstrap:装 Homebrew + Brewfile → 装全局运行时 → 启用 corepack(pnpm)。
+# run_onchange:本脚本(含内联 Brewfile)内容变化时自动重跑。
+# after:在 chezmoi 写完所有文件(含 ~/.config/mise/config.toml)之后运行。
+set -eu
+
+# --- 确保 Homebrew 存在 ---
+if ! command -v brew >/dev/null 2>&1; then
+  echo "==> 未检测到 Homebrew,开始安装..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# --- 按 Brewfile 安装(内容内联,改 Brewfile 即触发重跑)---
+echo "==> brew bundle 同步软件包..."
+brew bundle install --file=/dev/stdin <<'BREWFILE'
+{{ includeTemplate "Brewfile" . }}
+BREWFILE
+
+# --- 装全局运行时 + 启用 corepack(pnpm 随 node 版本走,替代 brew pnpm)---
+if command -v mise >/dev/null 2>&1; then
+  echo "==> mise install(读取 ~/.config/mise/config.toml)..."
+  mise install
+  echo "==> 启用 corepack(pnpm)..."
+  mise exec -- corepack enable || true
+fi
+{{ end -}}
