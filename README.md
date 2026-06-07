@@ -1,15 +1,17 @@
 # dotfiles
 
-跨平台开发环境配置,用 [chezmoi](https://www.chezmoi.io) 管理。**一套配置,两个平台**:
+**English** | [简体中文](README.zh.md) | [日本語](README.ja.md)
 
-- **macOS**(本机):完整环境,软件由 Homebrew(Brewfile)管理。
-- **Linux**(无 sudo 的远程机,如 GPU 服务器):自动 bootstrap,工具由 [mise](https://mise.jdx.dev) 装预编译二进制,zsh 用 [zsh-bin](https://github.com/romkatv/zsh-bin)——全程零 sudo。
+Cross-platform development environment managed with [chezmoi](https://www.chezmoi.io). **One config, two platforms:**
 
-涵盖 zsh([powerlevel10k](https://github.com/romkatv/powerlevel10k))、git、Neovim(LazyVim)、
-[ghostty](https://ghostty.org)(仅 mac)、mise / [uv](https://docs.astral.sh/uv)、bat / eza / fzf / ripgrep 等现代 CLI,
-以及 SSH config + [age](https://github.com/FiloSottile/age) 加密的 SSH 私钥(一个 passphrase 恢复全套)。
+- **macOS** (local): full environment, software managed via Homebrew (Brewfile).
+- **Linux** (no-sudo remotes, e.g. GPU servers): auto-bootstrapped — CLI tools installed as prebuilt binaries via [mise](https://mise.jdx.dev), zsh via [zsh-bin](https://github.com/romkatv/zsh-bin) — entirely sudo-free.
 
-## 新机器安装
+Covers zsh ([powerlevel10k](https://github.com/romkatv/powerlevel10k)), git, Neovim (LazyVim),
+[ghostty](https://ghostty.org) (mac only), mise / [uv](https://docs.astral.sh/uv), modern CLIs (bat / eza / fzf / ripgrep),
+plus an SSH config and [age](https://github.com/FiloSottile/age)-encrypted SSH keys (one passphrase restores everything).
+
+## New machine setup
 
 ### macOS
 
@@ -17,58 +19,57 @@
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply YOUR_GITHUB_USERNAME
 ```
 
-bootstrap 随后:装 Homebrew → `brew bundle` 装齐 CLI/GUI/App Store → `mise install` 装运行时 → `corepack enable`。
-`chezmoi init` 时会提示输入 **age passphrase** 解密 SSH 私钥(见下「SSH 密钥」)。前提:已登录 App Store。
+Bootstrap then: install Homebrew → `brew bundle` (CLI/GUI/App Store) → `mise install` (runtimes) → `corepack enable`.
+`chezmoi init` prompts for the **age passphrase** to decrypt SSH keys (see "SSH keys"). Prerequisite: signed into the App Store.
 
-### Linux 远程机(无 sudo)
+### Linux remote (no sudo)
 
 ```sh
-# 1. 装 chezmoi 单二进制
+# 1. install the chezmoi binary
 sh -c "$(curl -fsSL get.chezmoi.io)" -- -b ~/.local/bin
-# 2. init + apply(自动触发 Linux bootstrap)
+# 2. init + apply (triggers the Linux bootstrap)
 ~/.local/bin/chezmoi init --apply git@github.com:YOUR_GITHUB_USERNAME/dotfiles.git
 ```
 
-Linux bootstrap 脚本(`run_onchange`)幂等地:
+The Linux bootstrap script (`run_onchange`) idempotently:
 
-1. 装 **zsh-bin**(静态 zsh → `~/.local`)
-2. 装 **mise**(`~/.local/bin`)
-3. git clone 4 个 zsh 插件(p10k / autosuggestions / syntax-highlighting / completions)→ `~/.local/share/zsh/plugins`
-4. `mise install` 装 `config.toml` 声明的 CLI 工具(预编译二进制,含 aarch64)
-5. 给 `~/.bashrc` 追加守卫式 `exec zsh`(无 sudo 改登录 shell 的替代,仅交互生效)
-6. 配 VSCode Remote 集成终端用 zsh(键合并,不覆盖 GUI 设置)
+1. installs **zsh-bin** (static zsh → `~/.local`)
+2. installs **mise** (`~/.local/bin`)
+3. git-clones the 4 zsh plugins (p10k / autosuggestions / syntax-highlighting / completions) → `~/.local/share/zsh/plugins`
+4. `mise install` — CLI tools declared in `config.toml` (prebuilt binaries, incl. aarch64)
+5. appends a guarded `exec zsh` to `~/.bashrc` (a no-sudo substitute for changing the login shell; interactive-only)
+6. configures the VSCode Remote integrated terminal to use zsh (keyed merge, won't clobber GUI settings)
 
-之后 `ssh <host>` 或 VSCode 集成终端都进入 p10k zsh。机器/项目特有配置放各机的 `~/.config/zsh/90-local.zsh`(不入库)。
+Afterwards `ssh <host>` and the VSCode terminal both drop into p10k zsh. Machine/project-specific config goes in each host's `~/.config/zsh/90-local.zsh` (not tracked).
 
-## 日常
+## Daily use
 
 ```sh
-chezmoi edit <文件>      # 编辑源
-chezmoi apply            # 部署到 ~
-chezmoi cd               # 进源仓库
+chezmoi edit <file>      # edit source
+chezmoi apply            # deploy to ~
+chezmoi cd               # cd into the source repo
 ```
 
-macOS 软件增删改 `.chezmoitemplates/Brewfile`,`chezmoi apply` 自动重 `brew bundle`;
-`brewfile-drift`(zsh 函数)检查「装了没记 / 记了没装」。Linux CLI 工具增删改 `dot_config/mise/config.toml.tmpl` 的 `[tools]`。
+macOS software lives in `.chezmoitemplates/Brewfile`; `chezmoi apply` re-runs `brew bundle` automatically.
+`brewfile-drift` (a zsh function) reports "installed-but-untracked / tracked-but-missing". Linux CLI tools live in the `[tools]` section of `dot_config/mise/config.toml.tmpl`.
 
-## SSH 密钥(可选:age 加密)
+## SSH keys (optional: age encryption)
 
-> 本 public 仓**不含任何私钥**。下面是我自用的做法,供参考——具体密钥/密文只存在私有副本里。
+> This public repo contains **no private keys**. The following is how I do it personally, for reference — actual keys/ciphertext live only in a private copy.
 
-chezmoi 支持把私钥 [age 加密](https://www.chezmoi.io/user-guide/encryption/age/)后入库,新机器靠一个 passphrase 恢复:
+chezmoi can store private keys in the repo [encrypted with age](https://www.chezmoi.io/user-guide/encryption/age/); a new machine restores them with one passphrase:
 
-- `key.txt.age` — age 身份,用 passphrase 加密(引导唯一秘密,丢了全锁死)。
-- `encrypted_private_id_*.age` — 私钥密文。新增:`chezmoi add --encrypt ~/.ssh/id_xxx`。
-- `*.pub` — 公钥可明文入库;明文私钥**绝不入库**(`.gitignore` 兜底)。
+- `key.txt.age` — the age identity, passphrase-encrypted (the single bootstrap secret; lose it and you're locked out).
+- `encrypted_private_id_*.age` — key ciphertext. Add one with `chezmoi add --encrypt ~/.ssh/id_xxx`.
+- `*.pub` — public keys may be committed in plaintext; plaintext private keys are **never** committed (`.gitignore` safety net).
 
-SSH config 是模板:`github` host 全平台,内网/VPS 拓扑仅 mac/windows(Linux 远程跳过,避免内网信息外泄)。
-本仓 `private_dot_ssh/private_config.tmpl` 是**占位示例**,展示模板结构。
+The SSH config is a template: the `github` host on all platforms; internal/VPS topology only on mac/windows (skipped on Linux remotes to keep internal info off shared boxes). The `private_dot_ssh/private_config.tmpl` here is a **placeholder example** showing the template structure.
 
-## 设计原则
+## Design principles
 
-- **源是唯一真相**:编辑源仓库,不直接改 `~` 下的部署产物。
-- **洁癖分层**:Homebrew 只装工具不装语言;mise 管运行时(+ Linux 上的 CLI 工具);uv / pnpm 管项目依赖;全局尽量空。
-- **跨平台靠 OS 条件**:`{{` `if ne .chezmoi.os "darwin"` `}}` 模板 + `.chezmoiignore` 让 Linux 跳过 macOS 专属配置(ghostty / fastfetch),并启用 Linux 专属逻辑(TERM 兜底、CLI 工具声明、age 装入 mise)。SSH config 则按 OS 输出不同 host(非整体跳过)。
-- **幂等**:`chezmoi apply` 可反复执行;脚本仅在内容变化时重跑。
+- **Source is the single truth**: edit the source repo, never the deployed files under `~`.
+- **Clean layering**: Homebrew installs tools, not language runtimes; mise manages runtimes (+ CLI tools on Linux); uv / pnpm manage project deps; keep the global env empty.
+- **Cross-platform via OS conditionals**: `{{` `if ne .chezmoi.os "darwin"` `}}` templates + `.chezmoiignore` let Linux skip macOS-only config (ghostty / fastfetch) and enable Linux-only logic (TERM fallback, CLI-tool declarations, age installed via mise). The SSH config emits different hosts per OS (rather than being skipped wholesale).
+- **Idempotent**: `chezmoi apply` is re-runnable; scripts re-run only when their content changes.
 
-详细工作约定见 [CLAUDE.md](./CLAUDE.md)。
+See [CLAUDE.md](./CLAUDE.md) for detailed working conventions.
